@@ -1,38 +1,114 @@
-<script setup lang="ts">
-import { ref } from 'vue'
-
-defineProps<{ msg: string }>()
-
-const count = ref(0)
-</script>
-
 <template>
-  <h1>{{ msg }}</h1>
+  <div>
+    <h1>Characters from Rick and Morty</h1>
+    <ul>
+      <li v-for="character in characters" :key="character.id">
+        <div class="character-card">
+          <img :src="character.image" :alt="character.name" class="character-image" />
+          <div class="character-details">
+            <h2>{{ character.name }}</h2>
+            <p>Status: {{ character.status }}</p>
+            <p>Species: {{ character.species }}</p>
+          </div>
+        </div>
+      </li>
+    </ul>
 
-  <div class="card">
-    <button type="button" @click="count++">count is {{ count }}</button>
-    <p>
-      Edit
-      <code>components/HelloWorld.vue</code> to test HMR
-    </p>
+    <div class="pagination">
+      <button @click="prevPage" :disabled="currentPage === 1">Previous</button>
+      <span>Page {{ currentPage }} of {{ totalPages }}</span>
+      <button @click="nextPage" :disabled="currentPage === totalPages">Next</button>
+    </div>
   </div>
-
-  <p>
-    Check out
-    <a href="https://vuejs.org/guide/quick-start.html#local" target="_blank"
-      >create-vue</a
-    >, the official Vue + Vite starter
-  </p>
-  <p>
-    Install
-    <a href="https://github.com/vuejs/language-tools" target="_blank">Volar</a>
-    in your IDE for a better DX
-  </p>
-  <p class="read-the-docs">Click on the Vite and Vue logos to learn more</p>
 </template>
 
+<script lang="ts">
+import { defineComponent, ref, watch } from 'vue';
+import { useQuery, useApolloClient } from '@vue/apollo-composable';
+import gql from 'graphql-tag';
+
+const GET_CHARACTERS = gql`
+  query GetAllPerso($page: String!) {
+    characters(page: $page) {
+      info {
+        pages
+      }
+      results {
+        image
+        name
+        status
+        species
+      }
+    }
+  }
+`;
+
+export default defineComponent({
+  setup() {
+    const currentPage = ref(1);
+    const apolloClient = useApolloClient();
+
+    const { result, refetch } = useQuery(GET_CHARACTERS, {
+      page: currentPage.value,
+      client: apolloClient,
+    });
+
+    const characters: any = ref([]);
+    const totalPages = ref(0);
+
+    watch(result, () => {
+      console.log(flatted.stringify(result.value)); // Utilisez flatted pour la sérialisation
+      if (result.value && result.value.characters) {
+        characters.value = result.value.characters.results;
+        totalPages.value = result.value.characters.info.pages;
+      }
+    });
+
+    const nextPage = () => {
+      if (currentPage.value < totalPages.value) {
+        currentPage.value += 1;
+        refetch({ page: currentPage.value, client: apolloClient });
+      }
+    };
+
+    const prevPage = () => {
+      if (currentPage.value > 1) {
+        currentPage.value -= 1;
+        refetch({ page: currentPage.value, client: apolloClient });
+      }
+    };
+
+    return { characters, nextPage, prevPage, currentPage, totalPages };
+  },
+});
+</script>
+
 <style scoped>
-.read-the-docs {
-  color: #888;
+.character-card {
+  display: flex;
+  margin-bottom: 20px;
+}
+
+.character-image {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  margin-right: 10px;
+}
+
+.character-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.pagination {
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+button {
+  cursor: pointer;
 }
 </style>
