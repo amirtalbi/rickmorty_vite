@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Index from './views/Index.vue'
-import Detail from './views/Detail.vue'
+import Index from '../views/Index.vue'
+import Detail from '../views/Detail.vue'
 
 const routes = [
   {
@@ -17,7 +17,7 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
+  history: createWebHistory('./'),
   routes
 })
 
